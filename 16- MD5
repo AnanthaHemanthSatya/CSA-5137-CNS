@@ -1,0 +1,79 @@
+//192110537-T.ANANTHA SATYA HEMANTH
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h> // Include for calloc and free
+#include <string.h>
+#define LEFTROTATE(x, c) (((x) << (c)) | ((x) >> (32 - (c))))
+void md5(const uint8_t *initial_msg, size_t initial_len, uint8_t *digest) {
+ // Initialize variables
+ uint32_t h0, h1, h2, h3;
+ h0 = 0x67452301;
+ h1 = 0xEFCDAB89;
+ h2 = 0x98BADCFE;
+ h3 = 0x10325476;
+ // Pre-processing: adding a single 1 bit
+ size_t new_len = ((((initial_len + 8) / 64) + 1) * 64) - 8;
+ uint8_t *msg = calloc(new_len + 64, 1); // Allocate memory for msg
+ memcpy(msg, initial_msg, initial_len);
+ msg[initial_len] = 128; // appending bit "1"
+ // Pre-processing: appending length (in bits)
+ uint32_t bits_len = 8 * initial_len;
+ memcpy(msg + new_len, &bits_len, 4);
+ // Process the message in successive 512-bit chunks
+ for (int offset = 0; offset < new_len; offset += 64) {
+ // Break chunk into sixteen 32-bit words
+ uint32_t *w = (uint32_t *)(msg + offset);
+ // Initialize hash value for this chunk
+ uint32_t a = h0;
+ uint32_t b = h1;
+ uint32_t c = h2;
+ uint32_t d = h3;
+ // Main loop
+ for (int i = 0; i < 64; i++) {
+ uint32_t f, g;
+ if (i < 16) {
+ f = (b & c) | ((~b) & d);
+ g = i;
+ } else if (i < 32) {
+ f = (d & b) | ((~d) & c);
+ g = (5 * i + 1) % 16;
+ } else if (i < 48) {
+ f = b ^ c ^ d;
+ g = (3 * i + 5) % 16;
+ } else {
+ f = c ^ (b | (~d));
+ g = (7 * i) % 16;
+ }
+ uint32_t temp = d;
+ d = c;
+ c = b;
+ b = b + LEFTROTATE((a + f + ((uint32_t *)w)[g] + 0x5A827999), 7);
+ a = temp;
+ }
+ // Add this chunk's hash to result so far
+ h0 += a;
+ h1 += b;
+ h2 += c;
+ h3 += d;
+ }
+ // Free dynamically allocated memory
+ free(msg);
+ // Output hash
+ memcpy(digest, &h0, 4);
+ memcpy(digest + 4, &h1, 4);
+ memcpy(digest + 8, &h2, 4);
+ memcpy(digest + 12, &h3, 4);
+}
+void print_md5(uint8_t *digest) {
+ for (int i = 0; i < 16; i++)
+ printf("%02x", digest[i]);
+ printf("\n");
+}
+int main() {
+ char msg[] = "Hello, world!";
+ uint8_t digest[16];
+ md5((uint8_t *)msg, strlen(msg), digest);
+ printf("MD5 hash of '%s': ", msg);
+ print_md5(digest);
+ return 0;
+}
