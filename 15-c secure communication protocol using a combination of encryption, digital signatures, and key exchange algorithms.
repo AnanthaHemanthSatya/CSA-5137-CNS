@@ -1,0 +1,69 @@
+//192110537-T.ANNATHA SATYA HEMANTH
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h> // Added time.h header for time()
+// Define key length
+#define KEY_LENGTH 16
+// Function to generate a random key
+void generate_key(unsigned char *key) {
+for (int i = 0; i < KEY_LENGTH; i++) {
+key[i] = rand() % 256;
+}
+}
+// Function to encrypt data using a key
+void encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char 
+*ciphertext) {
+for (int i = 0; i < plaintext_len; i++) {
+ciphertext[i] = plaintext[i] ^ key[i % KEY_LENGTH]; // XOR encryption
+}
+}
+// Function to decrypt data using a key
+void decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key, unsigned char 
+*plaintext) {
+for (int i = 0; i < ciphertext_len; i++) {
+plaintext[i] = ciphertext[i] ^ key[i % KEY_LENGTH]; // XOR decryption
+}
+}
+// Function to generate a digital signature for data
+void generate_signature(unsigned char *data, int data_len, unsigned char *key, unsigned char 
+*signature) {
+for (int i = 0; i < data_len; i++) {
+signature[i] = data[i] ^ key[i % KEY_LENGTH]; // XOR signature
+}
+}
+// Function to verify a digital signature
+int verify_signature(unsigned char *data, int data_len, unsigned char *signature, unsigned char *key) {
+unsigned char computed_signature[data_len];
+generate_signature(data, data_len, key, computed_signature);
+return memcmp(signature, computed_signature, data_len) == 0;
+}
+int main() {
+// Seed the random number generator
+srand(time(NULL)); // Fixed by including <time.h>
+// Alice and Bob generate their shared secret key
+unsigned char shared_key[KEY_LENGTH];
+generate_key(shared_key);
+// Simulate message from Alice to Bob
+unsigned char plaintext[] = "Hello, Bob!";
+int plaintext_len = strlen((char*)plaintext);
+// Alice encrypts the message
+unsigned char ciphertext[plaintext_len];
+encrypt(plaintext, plaintext_len, shared_key, ciphertext);
+// Bob decrypts the message
+unsigned char decrypted[plaintext_len];
+decrypt(ciphertext, plaintext_len, shared_key, decrypted);
+decrypted[plaintext_len - 1] = '\0'; // Null terminate for printing
+printf("Decrypted Message: %s\n", decrypted);
+// Simulate signing the message by Alice
+unsigned char signature[plaintext_len];
+generate_signature(plaintext, plaintext_len, shared_key, signature);
+// Verify the signature by Bob
+int verified = verify_signature(plaintext, plaintext_len, signature, shared_key);
+if (verified) {
+printf("Signature verified!\n");
+} else {
+printf("Invalid signature!\n");
+}
+return 0;
+}
